@@ -134,9 +134,13 @@ async def proxy_queue():
 
 @app.get("/proxy/image/{filename}")
 async def proxy_image(filename: str):
-    async with httpx.AsyncClient(timeout=30) as c:
-        r = await c.get(f"{DGX_API}/image/{filename}", headers=HEADERS)
-        return Response(content=r.content, media_type=r.headers.get("content-type","image/jpeg"))
+    from fastapi.responses import StreamingResponse
+    async def stream():
+        async with httpx.AsyncClient(timeout=60) as c:
+            async with c.stream("GET", f"{DGX_API}/image/{filename}", headers=HEADERS) as r:
+                async for chunk in r.aiter_bytes(chunk_size=8192):
+                    yield chunk
+    return StreamingResponse(stream(), media_type="image/jpeg")
 
 @app.post("/proxy/approve/{filename}")
 async def proxy_approve(filename: str):
