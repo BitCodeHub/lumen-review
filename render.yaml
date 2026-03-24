@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: lumen-review
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DGX_REVIEW_API
+        value: https://roofless-melina-alcoholically.ngrok-free.dev
