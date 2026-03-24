@@ -55,11 +55,21 @@ let q=[], i=0, na=0, nr=0;
 
 async function load(){
   try{
-    const r=await fetch('/proxy/queue');
+    setState('⏳','Loading queue...','');
+    const controller=new AbortController();
+    const tid=setTimeout(()=>controller.abort(),30000);
+    const r=await fetch('/proxy/queue',{signal:controller.signal});
+    clearTimeout(tid);
+    if(!r.ok){setState('❌','HTTP '+r.status,'retry');return;}
     const d=await r.json();
-    q=d.images||d;
-    i=0; show();
-  }catch(e){setState('❌','Failed: '+e.message,'retry');}
+    q=d.images||d||[];
+    i=0;
+    if(q.length===0){setState('✅','Queue is empty!<br>All clear.','refresh');return;}
+    show();
+  }catch(e){
+    if(e.name==='AbortError'){setState('❌','Timed out loading queue','retry');}
+    else{setState('❌','Error: '+e.message,'retry');}
+  }
 }
 
 function show(){
