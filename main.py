@@ -8,7 +8,8 @@ import uvicorn
 app = FastAPI()
 DGX_API = os.environ.get("DGX_REVIEW_API", "https://lumen-review.ngrok.app")
 TOKEN = "lumen-review-2026"
-HEADERS = {"X-Review-Token": TOKEN}
+HEADERS = {}
+PARAMS = {"token": TOKEN}
 
 HTML = '''<!DOCTYPE html>
 <html lang="en">
@@ -139,7 +140,7 @@ async def index():
 @app.get("/proxy/queue")
 async def proxy_queue():
     async with httpx.AsyncClient(timeout=15) as c:
-        r = await c.get(f"{DGX_API}/api/queue", headers=HEADERS)
+        r = await c.get(f"{DGX_API}/api/queue", headers=HEADERS, params=PARAMS)
         return Response(content=r.content, media_type="application/json")
 
 @app.get("/proxy/image/{filename}")
@@ -147,7 +148,7 @@ async def proxy_image(filename: str):
     from fastapi.responses import StreamingResponse
     async def stream():
         async with httpx.AsyncClient(timeout=60) as c:
-            async with c.stream("GET", f"{DGX_API}/api/image/{filename}", headers=HEADERS) as r:
+            async with c.stream("GET", f"{DGX_API}/api/image/{filename}", headers=HEADERS, params=PARAMS) as r:
                 async for chunk in r.aiter_bytes(chunk_size=8192):
                     yield chunk
     return StreamingResponse(stream(), media_type="image/jpeg")
@@ -155,13 +156,13 @@ async def proxy_image(filename: str):
 @app.post("/proxy/approve/{filename}")
 async def proxy_approve(filename: str):
     async with httpx.AsyncClient(timeout=15) as c:
-        r = await c.post(f"{DGX_API}/api/approve/{filename}", headers=HEADERS)
+        r = await c.post(f"{DGX_API}/api/approve/{filename}", headers=HEADERS, params=PARAMS)
         return Response(content=r.content, media_type="application/json")
 
 @app.post("/proxy/reject/{filename}")
 async def proxy_reject(filename: str):
     async with httpx.AsyncClient(timeout=15) as c:
-        r = await c.post(f"{DGX_API}/api/reject/{filename}", headers=HEADERS)
+        r = await c.post(f"{DGX_API}/api/reject/{filename}", headers=HEADERS, params=PARAMS)
         return Response(content=r.content, media_type="application/json")
 
 if __name__ == "__main__":
